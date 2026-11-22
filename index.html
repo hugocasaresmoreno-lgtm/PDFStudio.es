@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="iqEoRU375sHDlkROOP8KMkuyWS492Gf5tCNTKVBlxIs" />
     <title>PDF Studio - Estándar Profesional & Editor Web</title>
     
     <!-- Tailwind CSS y Fuentes -->
@@ -159,7 +160,7 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN DE SEGURIDAD Y CONTACTO -->
+            <!-- SECCIÓN DE SEGURIDAD, CERTIFICADOS Y CONTACTO -->
             <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
                 <div class="flex items-center space-x-3 border-b border-slate-100 pb-4">
                     <div class="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
@@ -198,16 +199,23 @@
                             <span>Soporte y Contacto Oficial</span>
                         </div>
                         <p class="text-xs text-slate-600 leading-relaxed">
-                            ¿Dudas, sugerencias o reportes de errores? Escríbenos directamente a:
+                            ¿Tienes dudas, sugerencias o reportes de errores de la versión en desarrollo? Escríbenos directamente a:
                             <a href="mailto:hcasaresm10@gmail.com" class="text-blue-600 font-bold hover:underline block mt-1">hcasaresm10@gmail.com</a>
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- FOOTER -->
+            <!-- FOOTER LEGAL Y DE COOKIES -->
             <footer class="text-center text-xs text-slate-400 space-y-2 pt-4 border-t border-slate-200">
                 <p>&copy; 2026 PDF Studio Project. Todos los derechos reservados. Aplicación en fase experimental (Beta).</p>
+                <div class="flex justify-center space-x-4 text-slate-500 font-medium">
+                    <a href="#terminos" class="hover:text-blue-600 transition">Términos y Condiciones</a>
+                    <span>•</span>
+                    <a href="#privacidad" class="hover:text-blue-600 transition">Política de Privacidad</a>
+                    <span>•</span>
+                    <a href="#cookies" class="hover:text-blue-600 transition">Configuración de Cookies</a>
+                </div>
             </footer>
         </div>
     </main>
@@ -217,18 +225,22 @@
         <div class="flex items-center space-x-3 text-xs sm:text-sm">
             <i class="fa-solid fa-cookie-bite text-amber-400 text-2xl shrink-0"></i>
             <p class="text-slate-300">
-                Utilizamos cookies técnicas esenciales para el funcionamiento del visor PDF y estadísticas anónimas de desarrollo.
+                Utilizamos cookies técnicas esenciales para el funcionamiento del visor PDF y estadísticas anónimas de desarrollo. Al continuar navegando, aceptas nuestra política de cookies y términos de seguridad.
             </p>
         </div>
         <div class="flex items-center space-x-3 shrink-0">
             <button id="accept-cookies" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
                 Aceptar Cookies
             </button>
+            <button id="reject-cookies" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-700">
+                Solo Esenciales
+            </button>
         </div>
     </div>
 
     <!-- VISTA 2: EDITOR WEB INTERACTIVO -->
     <div id="editor-view" class="flex-1 flex flex-col overflow-hidden hidden tool-select">
+        <!-- Sub-barra de herramientas del editor -->
         <div class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 shadow-sm text-sm shrink-0">
             <div class="flex items-center space-x-2">
                 <button id="toggle-sidebar-btn" class="text-slate-600 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition" title="Índice / Páginas">
@@ -248,7 +260,7 @@
                 </button>
             </div>
 
-            <!-- Síntesis de voz -->
+            <!-- Síntesis de voz y selector -->
             <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
                 <select id="voice-select" class="bg-white border border-slate-300 text-xs rounded-lg px-2 py-1 outline-none max-w-[130px] truncate">
                     <option value="">Cargando voces...</option>
@@ -306,7 +318,7 @@
                         <h3 class="text-lg font-bold text-slate-800">Carga un documento PDF</h3>
                         <p class="text-xs text-slate-500">Arrastra tu archivo o haz clic en "Abrir PDF" en la barra superior.</p>
                         <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Versión en desarrollo. Soporte en <strong>hcasaresm10@gmail.com</strong>
+                            <i class="fa-solid fa-triangle-exclamation"></i> Versión en desarrollo. Si encuentras algún fallo, repórtalo a <strong>hcasaresm10@gmail.com</strong>
                         </p>
                     </div>
                 </div>
@@ -314,35 +326,50 @@
         </div>
     </div>
 
-    <!-- TOAST -->
+    <!-- NOTIFICACIÓN TOAST -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg text-xs font-medium transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-2">
         <i class="fa-solid fa-circle-info text-blue-400"></i>
         <span id="toast-msg">Mensaje</span>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPT DE CONTROL Y VISOR -->
     <script>
         const cookieBanner = document.getElementById('cookie-banner');
-        if (localStorage.getItem('cookies_accepted')) cookieBanner.style.display = 'none';
+        if (localStorage.getItem('cookies_accepted')) {
+            cookieBanner.style.display = 'none';
+        }
         document.getElementById('accept-cookies').addEventListener('click', () => {
             localStorage.setItem('cookies_accepted', 'all');
+            cookieBanner.style.display = 'none';
+        });
+        document.getElementById('reject-cookies').addEventListener('click', () => {
+            localStorage.setItem('cookies_accepted', 'essential');
             cookieBanner.style.display = 'none';
         });
 
         const homeView = document.getElementById('home-view');
         const editorView = document.getElementById('editor-view');
-        document.getElementById('nav-home-btn').addEventListener('click', showHome);
-        document.getElementById('nav-editor-btn').addEventListener('click', showEditor);
-        document.getElementById('hero-try-web').addEventListener('click', showEditor);
+        const navHomeBtn = document.getElementById('nav-home-btn');
+        const navEditorBtn = document.getElementById('nav-editor-btn');
+        const heroTryWeb = document.getElementById('hero-try-web');
 
         function showHome() {
             homeView.classList.remove('hidden');
             editorView.classList.add('hidden');
+            navHomeBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2";
+            navEditorBtn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2";
         }
+
         function showEditor() {
             homeView.classList.add('hidden');
             editorView.classList.remove('hidden');
+            navEditorBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2";
+            navHomeBtn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2";
         }
+
+        navHomeBtn.addEventListener('click', showHome);
+        navEditorBtn.addEventListener('click', showEditor);
+        heroTryWeb.addEventListener('click', showEditor);
 
         let pdfDoc = null;
         let scale = 1.5;
@@ -353,6 +380,8 @@
         let lastX = 0, lastY = 0;
 
         const synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPaused = false;
         let availableVoices = [];
 
         function showToast(msg) {
@@ -367,15 +396,21 @@
             const voiceSelect = document.getElementById('voice-select');
             if (!voiceSelect) return;
             voiceSelect.innerHTML = '';
-            availableVoices.forEach((voice, index) => {
+            
+            const spanishVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+            const voicesToUse = spanishVoices.length > 0 ? spanishVoices : availableVoices;
+
+            voicesToUse.forEach((voice) => {
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = availableVoices.indexOf(voice);
                 option.textContent = `${voice.name} (${voice.lang})`;
                 voiceSelect.appendChild(option);
             });
         }
+
         synth.onvoiceschanged = loadVoices;
         loadVoices();
+        setTimeout(loadVoices, 500);
 
         const fileInput = document.getElementById('file-input');
         const viewerContainer = document.getElementById('viewer-container');
@@ -391,16 +426,70 @@
             const file = e.dataTransfer.files[0];
             if (file && file.type === 'application/pdf') {
                 const reader = new FileReader();
-                reader.onload = async function() { await loadPDF(new Uint8Array(this.result)); };
+                reader.onload = async function() {
+                    await loadPDF(new Uint8Array(this.result));
+                };
                 reader.readAsArrayBuffer(file);
             }
         });
 
         document.getElementById('toggle-sidebar-btn').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
 
+        const tabThumbs = document.getElementById('tab-thumbs');
+        const tabOutline = document.getElementById('tab-outline');
+        tabThumbs.addEventListener('click', () => {
+            tabThumbs.className = "flex-1 py-2 text-center bg-slate-50 border-b-2 border-blue-600 text-blue-600";
+            tabOutline.className = "flex-1 py-2 text-center hover:bg-slate-50 text-slate-600";
+            thumbnailsContainer.classList.remove('hidden');
+            outlineContainer.classList.add('hidden');
+        });
+        tabOutline.addEventListener('click', () => {
+            tabOutline.className = "flex-1 py-2 text-center bg-slate-50 border-b-2 border-blue-600 text-blue-600";
+            tabThumbs.className = "flex-1 py-2 text-center hover:bg-slate-50 text-slate-600";
+            outlineContainer.classList.remove('hidden');
+            thumbnailsContainer.classList.add('hidden');
+        });
+
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsLabel = document.getElementById('tts-label');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+
+        ttsBtn.addEventListener('click', async () => {
+            if (!pdfDoc) { showToast("Primero abre un PDF."); return; }
+            if (synth.paused) { synth.resume(); isPaused = false; ttsLabel.textContent = "Pausar"; return; }
+            if (synth.speaking && !isPaused) { synth.pause(); isPaused = true; ttsLabel.textContent = "Reanudar"; return; }
+
+            ttsLabel.textContent = "Cargando...";
+            let fullText = "";
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ') + "\n\n";
+            }
+            fullText = fullText.replace(/\s+/g, ' ').trim();
+
+            if (!fullText) { showToast("PDF sin texto seleccionable."); ttsLabel.textContent = "Leer"; return; }
+
+            synth.cancel();
+            currentUtterance = new SpeechSynthesisUtterance(fullText);
+            const selectedVoiceIndex = document.getElementById('voice-select').value;
+            if (selectedVoiceIndex !== "" && availableVoices[selectedVoiceIndex]) {
+                currentUtterance.voice = availableVoices[selectedVoiceIndex];
+            }
+
+            currentUtterance.onstart = () => { ttsLabel.textContent = "Pausar"; ttsStopBtn.classList.remove('hidden'); };
+            currentUtterance.onend = () => { ttsLabel.textContent = "Leer"; ttsStopBtn.classList.add('hidden'); isPaused = false; };
+            synth.speak(currentUtterance);
+        });
+
+        ttsStopBtn.addEventListener('click', () => {
+            synth.cancel(); isPaused = false; ttsLabel.textContent = "Leer"; ttsStopBtn.classList.add('hidden');
+        });
+
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
+                synth.cancel();
                 const reader = new FileReader();
                 reader.onload = async function() { await loadPDF(new Uint8Array(this.result)); };
                 reader.readAsArrayBuffer(file);
@@ -414,6 +503,7 @@
                 pageAnnotations = {};
                 if(welcomeScreen) welcomeScreen.remove();
                 await renderAllPages();
+                await loadOutline();
                 showToast(`PDF cargado (${pdfDoc.numPages} páginas)`);
             } catch (err) {
                 showToast("Error al abrir el archivo PDF.");
@@ -425,6 +515,7 @@
             thumbnailsContainer.innerHTML = '';
             for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                 await renderPage(pageNum);
+                renderThumbnail(pageNum);
             }
         }
 
@@ -448,6 +539,17 @@
             await page.render({ canvasContext: canvas.getContext('2d'), transform: [outputScale, 0, 0, outputScale, 0, 0], viewport: viewport }).promise;
             wrapper.appendChild(canvas);
 
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'textLayer';
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+            wrapper.appendChild(textLayerDiv);
+
+            try {
+                const textContent = await page.getTextContent();
+                await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: textLayerDiv, viewport: viewport, textDivs: [] }).promise;
+            } catch (e) {}
+
             const annotCanvas = document.createElement('canvas');
             annotCanvas.className = 'annotation-canvas';
             annotCanvas.width = canvas.width;
@@ -468,30 +570,127 @@
 
         function setupAnnotationEvents(canvas, ctx, pageNum) {
             let drawing = false;
-            canvas.addEventListener('mousedown', (e) => {
+            const getCoords = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            };
+
+            const startDraw = (e) => {
                 if (currentTool === 'select') return;
-                const rect = canvas.getBoundingClientRect();
-                lastX = e.clientX - rect.left; lastY = e.clientY - rect.top;
-                drawing = true;
-            });
-            canvas.addEventListener('mousemove', (e) => {
+                if (e.cancelable) e.preventDefault();
+                const { x, y } = getCoords(e);
+                if (currentTool === 'eraser') { eraseAt(x, y, pageNum, ctx); drawing = true; return; }
+                drawing = true; lastX = x; lastY = y;
+            };
+
+            const moveDraw = (e) => {
                 if (!drawing || currentTool === 'select') return;
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y);
-                ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize;
-                ctx.stroke();
-                pageAnnotations[pageNum].push({ type: currentTool, x1: lastX, y1: lastY, x2: x, y2: y, color: currentColor, size: currentBrushSize });
+                if (e.cancelable) e.preventDefault();
+                const { x, y } = getCoords(e);
+                if (currentTool === 'eraser') { eraseAt(x, y, pageNum, ctx); return; }
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+
+                if (currentTool === 'draw') {
+                    ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize; ctx.globalAlpha = 1.0;
+                } else {
+                    ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize * 3.5; ctx.globalAlpha = 0.45;
+                }
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                ctx.globalAlpha = 1.0;
+
+                pageAnnotations[pageNum].push({
+                    type: currentTool, x1: lastX, y1: lastY, x2: x, y2: y,
+                    color: currentColor, size: ctx.lineWidth, alpha: currentTool === 'highlight' ? 0.45 : 1.0
+                });
                 lastX = x; lastY = y;
-            });
+            };
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', moveDraw);
             window.addEventListener('mouseup', () => { drawing = false; });
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', moveDraw, { passive: false });
+            window.addEventListener('touchend', () => { drawing = false; });
+        }
+
+        function eraseAt(x, y, pageNum, ctx) {
+            if (!pageAnnotations[pageNum]) return;
+            pageAnnotations[pageNum] = pageAnnotations[pageNum].filter(item => Math.hypot(item.x1 - x, item.y1 - y) > 25);
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            redrawCanvas(ctx, pageAnnotations[pageNum]);
         }
 
         function redrawCanvas(ctx, annotations) {
             annotations.forEach(item => {
                 ctx.beginPath(); ctx.moveTo(item.x1, item.y1); ctx.lineTo(item.x2, item.y2);
-                ctx.strokeStyle = item.color; ctx.lineWidth = item.size; ctx.stroke();
+                ctx.strokeStyle = item.color; ctx.lineWidth = item.size; ctx.globalAlpha = item.alpha || 1.0;
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                ctx.globalAlpha = 1.0;
             });
+        }
+
+        async function renderThumbnail(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 0.15 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width; canvas.height = viewport.height;
+            canvas.className = 'cursor-pointer rounded border border-slate-200 hover:border-blue-500 shadow-sm transition';
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            canvas.addEventListener('click', () => {
+                const target = document.querySelector(`[data-page-number="${pageNum}"]`);
+                if(target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+            thumbnailsContainer.appendChild(canvas);
+        }
+
+        async function loadOutline() {
+            outlineContainer.innerHTML = '';
+            try {
+                const outline = await pdfDoc.getOutline();
+                if (!outline || outline.length === 0) {
+                    outlineContainer.innerHTML = '<p class="text-xs text-slate-400 text-center mt-4">Sin índice disponible</p>';
+                    return;
+                }
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-1 pl-1';
+                async function renderItems(items, parent) {
+                    for (let item of items) {
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.textContent = item.title;
+                        a.className = 'text-blue-600 hover:underline cursor-pointer block truncate py-0.5';
+                        a.addEventListener('click', async (e) => {
+                            e.preventDefault();
+                            if (item.dest) {
+                                let dest = item.dest;
+                                if (typeof dest === 'string') dest = await pdfDoc.getDestination(dest);
+                                if (dest) {
+                                    const pageIndex = await pdfDoc.getPageIndex(dest[0]);
+                                    const target = document.querySelector(`[data-page-number="${pageIndex + 1}"]`);
+                                    if(target) target.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }
+                        });
+                        li.appendChild(a);
+                        if (item.items && item.items.length > 0) {
+                            const sub = document.createElement('ul');
+                            sub.className = 'pl-3 space-y-1 border-l border-slate-200 mt-1';
+                            await renderItems(item.items, sub);
+                            li.appendChild(sub);
+                        }
+                        parent.appendChild(li);
+                    }
+                }
+                await renderItems(outline, ul);
+                outlineContainer.appendChild(ul);
+            } catch (e) {
+                outlineContainer.innerHTML = '<p class="text-xs text-slate-400 text-center mt-4">Sin índice disponible</p>';
+            }
         }
 
         document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -509,6 +708,32 @@
                 btn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-500');
                 currentColor = btn.dataset.color;
             });
+        });
+
+        document.getElementById('brush-size').addEventListener('input', (e) => { currentBrushSize = e.target.value; });
+
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            if (!pdfDoc) { showToast("Primero abre un PDF."); return; }
+            showToast("Generando archivo PDF editado...");
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                if (i > 1) pdf.addPage();
+                const wrapper = document.querySelector(`[data-page-number="${i}"]`);
+                const canvases = wrapper.querySelectorAll('canvas');
+                const combined = document.createElement('canvas');
+                combined.width = canvases[0].width; combined.height = canvases[0].height;
+                const ctx = combined.getContext('2d');
+                ctx.drawImage(canvases[0], 0, 0);
+                if (canvases[1]) ctx.drawImage(canvases[1], 0, 0);
+                
+                const imgData = combined.toDataURL('image/jpeg', 0.95);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvases[0].height * pdfWidth) / canvases[0].width;
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            }
+            pdf.save("documento-editado.pdf");
+            showToast("¡PDF descargado con éxito!");
         });
     </script>
 </body>
