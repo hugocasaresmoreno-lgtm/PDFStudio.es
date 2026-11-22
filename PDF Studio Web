@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Studio - Estándar Profesional & Editor Web</title>
+    
+    <!-- Tailwind CSS y Fuentes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .pdf-page-wrapper {
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            position: relative;
+            flex-shrink: 0;
+        }
+        canvas { display: block; }
+        .annotation-canvas { position: absolute; top: 0; left: 0; }
+        
+        #editor-view.tool-select .textLayer { pointer-events: auto; z-index: 20; }
+        #editor-view.tool-select .annotation-canvas { pointer-events: none; z-index: 1; }
+
+        #editor-view.tool-draw .textLayer { pointer-events: none; z-index: 1; }
+        #editor-view.tool-draw .annotation-canvas { pointer-events: auto; z-index: 20; cursor: crosshair; }
+
+        #editor-view.tool-highlight .textLayer { pointer-events: none; z-index: 1; }
+        #editor-view.tool-highlight .annotation-canvas { pointer-events: auto; z-index: 20; cursor: crosshair; }
+
+        #editor-view.tool-eraser .textLayer { pointer-events: none; z-index: 1; }
+        #editor-view.tool-eraser .annotation-canvas { pointer-events: auto; z-index: 20; cursor: pointer; }
+
+        .textLayer {
+            position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+            overflow: hidden; opacity: 1 !important; line-height: 1.0;
+        }
+        .textLayer span {
+            color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%;
+        }
+        .textLayer span::selection {
+            background: rgba(37, 99, 235, 0.4) !important; color: transparent !important;
+        }
+        #sidebar.collapsed { width: 0 !important; min-width: 0 !important; padding: 0 !important; overflow: hidden; border: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- BARRA DE NAVEGACIÓN PRINCIPAL -->
+    <header class="bg-slate-900 text-white h-16 flex items-center justify-between px-6 z-30 shadow-md shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-inner bg-blue-600 flex items-center justify-center border border-blue-400/30">
+                <img src="icono.jpg" alt="PDF Studio Icon" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/40x40/2563eb/ffffff?text=PS';">
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="font-bold text-base leading-tight tracking-wide">PDF Studio</h1>
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">En Desarrollo (Beta)</span>
+                </div>
+                <p class="text-[10px] text-slate-400 font-medium">Estándar Profesional Multiplataforma</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button id="nav-home-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2">
+                <i class="fa-solid fa-house"></i>
+                <span>Centro de Descargas</span>
+            </button>
+            <button id="nav-editor-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-blue-400"></i>
+                <span>Abrir Editor Web</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- VISTA 1: CENTRO DE DESCARGAS Y PRESENTACIÓN -->
+    <main id="home-view" class="flex-1 overflow-y-auto bg-slate-50 p-6 md:p-12 pb-24">
+        <div class="max-w-5xl mx-auto space-y-10">
+            <!-- HERO BANNER -->
+            <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between">
+                <div class="relative z-10 max-w-xl space-y-4">
+                    <div class="inline-flex items-center space-x-2 bg-blue-500/30 border border-blue-400/30 text-blue-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Software en Desarrollo Activo (v1.2-beta)</span>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">El Visor y Editor de PDF Definitivo</h2>
+                    <p class="text-blue-100 text-sm md:text-base leading-relaxed">
+                        Solución multiplataforma de alto rendimiento para lectura, anotación avanzada y edición de documentos con motor en la nube y nativo de escritorio.
+                    </p>
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <a href="https://drive.google.com/file/d/1EYEt-FCn9xLtMN1HRKqQ3q5BGDn1reue/view?usp=sharing" target="_blank" class="bg-white text-blue-900 hover:bg-blue-50 px-6 py-3 rounded-xl font-bold text-sm shadow-lg transition flex items-center space-x-2">
+                            <i class="fa-brands fa-windows text-lg"></i>
+                            <span>Descargar .exe (Escritorio)</span>
+                        </a>
+                        <button id="hero-try-web" class="bg-blue-600 hover:bg-blue-500 border border-blue-400/40 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg transition flex items-center space-x-2">
+                            <i class="fa-solid fa-globe text-lg"></i>
+                            <span>Probar en el Navegador</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-8 md:mt-0 relative z-10 w-32 h-32 md:w-44 md:h-44 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
+                    <img src="icono.jpg" alt="Icono Grande" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/180x180/2563eb/ffffff?text=PDF+Studio';">
+                </div>
+            </div>
+
+            <!-- CAPACIDADES PRINCIPALES -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900">Motor de Renderizado Gráfico Avanzado</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Carga instantánea de documentos complejos con conservación íntegra de capas y zoom de alta fidelidad sin pérdida de calidad.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-pen-nib"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900">Herramientas de Anotación y Edición Pro</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Modos dinámicos para selección de texto, rotulador interactivo, subrayador de precisión y borrador con control de grosor en tiempo real.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900">Módulo de Síntesis de Voz (TTS)</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Sistema integrado con la API del navegador para lectura en voz alta fluida, con selección automática de voces y control total.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900">Procesamiento Local Seguro</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Tus archivos nunca abandonan tu dispositivo. Privacidad absoluta respaldada por un entorno web totalmente seguro y aislado.
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE SEGURIDAD, CERTIFICADOS Y CONTACTO (NUEVO) -->
+            <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center space-x-3 border-b border-slate-100 pb-4">
+                    <div class="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                        <i class="fa-solid fa-certificate text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg">Seguridad, Certificados y Cumplimiento</h3>
+                        <p class="text-xs text-slate-500">Garantía oficial de protección de datos y autenticidad del software</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                    <div class="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div class="flex items-center space-x-2 text-blue-600 font-semibold">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Certificado SSL y Encriptación</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Las comunicaciones web y la descarga de binarios cuentan con hash SHA-256 verificado y estándares de encriptación TLS 1.3 de grado bancario.
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div class="flex items-center space-x-2 text-indigo-600 font-semibold">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <span>Política de Privacidad Estricta</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Cumplimiento total con normativas de privacidad. Ningún documento procesado en el navegador es almacenado en servidores externos.
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div class="flex items-center space-x-2 text-emerald-600 font-semibold">
+                            <i class="fa-solid fa-envelope"></i>
+                            <span>Soporte y Contacto Oficial</span>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            ¿Tienes dudas, sugerencias o reportes de errores de la versión en desarrollo? Escríbenos directamente a:
+                            <a href="mailto:hcasaresm10@gmail.com" class="text-blue-600 font-bold hover:underline block mt-1">hcasaresm10@gmail.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER LEGAL Y DE COOKIES -->
+            <footer class="text-center text-xs text-slate-400 space-y-2 pt-4 border-t border-slate-200">
+                <p>&copy; 2026 PDF Studio Project. Todos los derechos reservados. Aplicación en fase experimental (Beta).</p>
+                <div class="flex justify-center space-x-4 text-slate-500 font-medium">
+                    <a href="#terminos" class="hover:text-blue-600 transition">Términos y Condiciones</a>
+                    <span>•</span>
+                    <a href="#privacidad" class="hover:text-blue-600 transition">Política de Privacidad</a>
+                    <span>•</span>
+                    <a href="#cookies" class="hover:text-blue-600 transition">Configuración de Cookies</a>
+                </div>
+            </footer>
+        </div>
+    </main>
+
+    <!-- BANNER DE COOKIES (NUEVO) -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur text-white p-4 px-6 shadow-2xl z-50 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
+        <div class="flex items-center space-x-3 text-xs sm:text-sm">
+            <i class="fa-solid fa-cookie-bite text-amber-400 text-2xl shrink-0"></i>
+            <p class="text-slate-300">
+                Utilizamos cookies técnicas esenciales para el funcionamiento del visor PDF y estadísticas anónimas de desarrollo. Al continuar navegando, aceptas nuestra política de cookies y términos de seguridad.
+            </p>
+        </div>
+        <div class="flex items-center space-x-3 shrink-0">
+            <button id="accept-cookies" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
+                Aceptar Cookies
+            </button>
+            <button id="reject-cookies" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-700">
+                Solo Esenciales
+            </button>
+        </div>
+    </div>
+
+    <!-- VISTA 2: EDITOR WEB INTERACTIVO -->
+    <div id="editor-view" class="flex-1 flex flex-col overflow-hidden hidden tool-select">
+        <!-- Sub-barra de herramientas del editor -->
+        <div class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 shadow-sm text-sm shrink-0">
+            <div class="flex items-center space-x-2">
+                <button id="toggle-sidebar-btn" class="text-slate-600 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition" title="Índice / Páginas">
+                    <i class="fa-solid fa-bars text-base"></i>
+                </button>
+                <button data-tool="select" class="tool-btn px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-hand"></i> <span>Mover</span>
+                </button>
+                <button data-tool="draw" class="tool-btn px-2.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-pen"></i> <span>Rotulador</span>
+                </button>
+                <button data-tool="highlight" class="tool-btn px-2.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-highlighter"></i> <span>Subrayar</span>
+                </button>
+                <button data-tool="eraser" class="tool-btn px-2.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-eraser"></i> <span>Goma</span>
+                </button>
+            </div>
+
+            <!-- Síntesis de voz y selector -->
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
+                <select id="voice-select" class="bg-white border border-slate-300 text-xs rounded-lg px-2 py-1 outline-none max-w-[130px] truncate">
+                    <option value="">Cargando voces...</option>
+                </select>
+                <button id="tts-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span id="tts-label">Leer</span>
+                </button>
+                <button id="tts-stop-btn" class="hidden bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg text-xs font-semibold transition">
+                    <i class="fa-solid fa-stop"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1">
+                    <button class="color-btn w-4 h-4 rounded-full bg-black ring-2 ring-offset-1 ring-blue-500" data-color="#000000"></button>
+                    <button class="color-btn w-4 h-4 rounded-full bg-yellow-300" data-color="#fde047"></button>
+                    <button class="color-btn w-4 h-4 rounded-full bg-blue-400" data-color="#60a5fa"></button>
+                    <button class="color-btn w-4 h-4 rounded-full bg-red-500" data-color="#ef4444"></button>
+                </div>
+                <input type="range" id="brush-size" min="2" max="25" value="6" class="w-16 accent-blue-600">
+                
+                <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1 ml-2">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Abrir PDF</span>
+                    <input type="file" id="file-input" accept=".pdf" class="hidden">
+                </label>
+                <button id="save-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Guardar</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden">
+            <div id="sidebar" class="w-52 bg-white border-r border-slate-200 flex flex-col z-10 shrink-0">
+                <div class="flex border-b border-slate-200 text-xs font-bold text-slate-600">
+                    <button id="tab-thumbs" class="flex-1 py-2 text-center bg-slate-50 border-b-2 border-blue-600 text-blue-600">Páginas</button>
+                    <button id="tab-outline" class="flex-1 py-2 text-center hover:bg-slate-50 text-slate-600">Índice</button>
+                </div>
+                <div id="sidebar-content-thumbs" class="flex-1 overflow-y-auto p-3 space-y-3 flex flex-col items-center">
+                    <p class="text-xs text-slate-400 text-center mt-4">Sin documento abierto</p>
+                </div>
+                <div id="sidebar-content-outline" class="flex-1 overflow-y-auto p-3 space-y-1 hidden text-xs">
+                    <p class="text-xs text-slate-400 text-center mt-4">Sin índice disponible</p>
+                </div>
+            </div>
+
+            <div id="viewer-container" class="bg-slate-200 flex-1 overflow-auto flex flex-col items-center p-6 relative">
+                <div id="pages-container" class="flex flex-col items-center w-full max-w-4xl space-y-6">
+                    <div id="welcome-screen" class="text-center py-20 bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md w-full my-auto space-y-3">
+                        <div class="inline-block p-4 bg-blue-50 rounded-full mb-1 text-blue-600 text-3xl">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Carga un documento PDF</h3>
+                        <p class="text-xs text-slate-500">Arrastra tu archivo o haz clic en "Abrir PDF" en la barra superior.</p>
+                        <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Versión en desarrollo. Si encuentras algún fallo, repórtalo a <strong>hcasaresm10@gmail.com</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg text-xs font-medium transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-info text-blue-400"></i>
+        <span id="toast-msg">Mensaje</span>
+    </div>
+
+    <!-- SCRIPT DE CONTROL Y VISOR -->
+    <script>
+        // Manejo de Cookies
+        const cookieBanner = document.getElementById('cookie-banner');
+        if (localStorage.getItem('cookies_accepted')) {
+            cookieBanner.style.display = 'none';
+        }
+        document.getElementById('accept-cookies').addEventListener('click', () => {
+            localStorage.setItem('cookies_accepted', 'all');
+            cookieBanner.style.display = 'none';
+        });
+        document.getElementById('reject-cookies').addEventListener('click', () => {
+            localStorage.setItem('cookies_accepted', 'essential');
+            cookieBanner.style.display = 'none';
+        });
+
+        const homeView = document.getElementById('home-view');
+        const editorView = document.getElementById('editor-view');
+        const navHomeBtn = document.getElementById('nav-home-btn');
+        const navEditorBtn = document.getElementById('nav-editor-btn');
+        const heroTryWeb = document.getElementById('hero-try-web');
+
+        function showHome() {
+            homeView.classList.remove('hidden');
+            editorView.classList.add('hidden');
+            navHomeBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2";
+            navEditorBtn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2";
+        }
+
+        function showEditor() {
+            homeView.classList.add('hidden');
+            editorView.classList.remove('hidden');
+            navEditorBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2";
+            navHomeBtn.className = "bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2";
+        }
+
+        navHomeBtn.addEventListener('click', showHome);
+        navEditorBtn.addEventListener('click', showEditor);
+        heroTryWeb.addEventListener('click', showEditor);
+
+        let pdfDoc = null;
+        let scale = 1.5;
+        let currentTool = 'select';
+        let currentColor = '#000000';
+        let currentBrushSize = 6;
+        let pageAnnotations = {};
+        let lastX = 0, lastY = 0;
+
+        const synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPaused = false;
+        let availableVoices = [];
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function loadVoices() {
+            availableVoices = synth.getVoices();
+            const voiceSelect = document.getElementById('voice-select');
+            if (!voiceSelect) return;
+            voiceSelect.innerHTML = '';
+            
+            const spanishVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+            const voicesToUse = spanishVoices.length > 0 ? spanishVoices : availableVoices;
+
+            voicesToUse.forEach((voice) => {
+                const option = document.createElement('option');
+                option.value = availableVoices.indexOf(voice);
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        synth.onvoiceschanged = loadVoices;
+        loadVoices();
+        setTimeout(loadVoices, 500);
+
+        const fileInput = document.getElementById('file-input');
+        const viewerContainer = document.getElementById('viewer-container');
+        const pagesContainer = document.getElementById('pages-container');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const thumbnailsContainer = document.getElementById('sidebar-content-thumbs');
+        const outlineContainer = document.getElementById('sidebar-content-outline');
+        const sidebar = document.getElementById('sidebar');
+
+        viewerContainer.addEventListener('dragover', (e) => e.preventDefault());
+        viewerContainer.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.onload = async function() {
+                    await loadPDF(new Uint8Array(this.result));
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        document.getElementById('toggle-sidebar-btn').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+
+        const tabThumbs = document.getElementById('tab-thumbs');
+        const tabOutline = document.getElementById('tab-outline');
+        tabThumbs.addEventListener('click', () => {
+            tabThumbs.className = "flex-1 py-2 text-center bg-slate-50 border-b-2 border-blue-600 text-blue-600";
+            tabOutline.className = "flex-1 py-2 text-center hover:bg-slate-50 text-slate-600";
+            thumbnailsContainer.classList.remove('hidden');
+            outlineContainer.classList.add('hidden');
+        });
+        tabOutline.addEventListener('click', () => {
+            tabOutline.className = "flex-1 py-2 text-center bg-slate-50 border-b-2 border-blue-600 text-blue-600";
+            tabThumbs.className = "flex-1 py-2 text-center hover:bg-slate-50 text-slate-600";
+            outlineContainer.classList.remove('hidden');
+            thumbnailsContainer.classList.add('hidden');
+        });
+
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsLabel = document.getElementById('tts-label');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+
+        ttsBtn.addEventListener('click', async () => {
+            if (!pdfDoc) { showToast("Primero abre un PDF."); return; }
+            if (synth.paused) { synth.resume(); isPaused = false; ttsLabel.textContent = "Pausar"; return; }
+            if (synth.speaking && !isPaused) { synth.pause(); isPaused = true; ttsLabel.textContent = "Reanudar"; return; }
+
+            ttsLabel.textContent = "Cargando...";
+            let fullText = "";
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ') + "\n\n";
+            }
+            fullText = fullText.replace(/\s+/g, ' ').trim();
+
+            if (!fullText) { showToast("PDF sin texto seleccionable."); ttsLabel.textContent = "Leer"; return; }
+
+            synth.cancel();
+            currentUtterance = new SpeechSynthesisUtterance(fullText);
+            const selectedVoiceIndex = document.getElementById('voice-select').value;
+            if (selectedVoiceIndex !== "" && availableVoices[selectedVoiceIndex]) {
+                currentUtterance.voice = availableVoices[selectedVoiceIndex];
+            }
+
+            currentUtterance.onstart = () => { ttsLabel.textContent = "Pausar"; ttsStopBtn.classList.remove('hidden'); };
+            currentUtterance.onend = () => { ttsLabel.textContent = "Leer"; ttsStopBtn.classList.add('hidden'); isPaused = false; };
+            synth.speak(currentUtterance);
+        });
+
+        ttsStopBtn.addEventListener('click', () => {
+            synth.cancel(); isPaused = false; ttsLabel.textContent = "Leer"; ttsStopBtn.classList.add('hidden');
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                synth.cancel();
+                const reader = new FileReader();
+                reader.onload = async function() { await loadPDF(new Uint8Array(this.result)); };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        async function loadPDF(data) {
+            try {
+                const loadingTask = pdfjsLib.getDocument({ data: data, stopAtErrors: false });
+                pdfDoc = await loadingTask.promise;
+                pageAnnotations = {};
+                if(welcomeScreen) welcomeScreen.remove();
+                await renderAllPages();
+                await loadOutline();
+                showToast(`PDF cargado (${pdfDoc.numPages} páginas)`);
+            } catch (err) {
+                showToast("Error al abrir el archivo PDF.");
+            }
+        }
+
+        async function renderAllPages() {
+            pagesContainer.innerHTML = '';
+            thumbnailsContainer.innerHTML = '';
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                await renderPage(pageNum);
+                renderThumbnail(pageNum);
+            }
+        }
+
+        async function renderPage(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const outputScale = Math.max(window.devicePixelRatio || 1, 2);
+            const viewport = page.getViewport({ scale: scale });
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page-wrapper';
+            wrapper.style.width = `${viewport.width}px`;
+            wrapper.style.height = `${viewport.height}px`;
+            wrapper.dataset.pageNumber = pageNum;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = `${viewport.width}px`;
+            canvas.style.height = `${viewport.height}px`;
+            
+            await page.render({ canvasContext: canvas.getContext('2d'), transform: [outputScale, 0, 0, outputScale, 0, 0], viewport: viewport }).promise;
+            wrapper.appendChild(canvas);
+
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'textLayer';
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+            wrapper.appendChild(textLayerDiv);
+
+            try {
+                const textContent = await page.getTextContent();
+                await pdfjsLib.renderTextLayer({ textContentSource: textContent, container: textLayerDiv, viewport: viewport, textDivs: [] }).promise;
+            } catch (e) {}
+
+            const annotCanvas = document.createElement('canvas');
+            annotCanvas.className = 'annotation-canvas';
+            annotCanvas.width = canvas.width;
+            annotCanvas.height = canvas.height;
+            annotCanvas.style.width = `${viewport.width}px`;
+            annotCanvas.style.height = `${viewport.height}px`;
+            wrapper.appendChild(annotCanvas);
+
+            const annotCtx = annotCanvas.getContext('2d');
+            annotCtx.scale(outputScale, outputScale);
+
+            if (!pageAnnotations[pageNum]) pageAnnotations[pageNum] = [];
+            else redrawCanvas(annotCtx, pageAnnotations[pageNum]);
+
+            setupAnnotationEvents(annotCanvas, annotCtx, pageNum);
+            pagesContainer.appendChild(wrapper);
+        }
+
+        function setupAnnotationEvents(canvas, ctx, pageNum) {
+            let drawing = false;
+            const getCoords = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            };
+
+            const startDraw = (e) => {
+                if (currentTool === 'select') return;
+                if (e.cancelable) e.preventDefault();
+                const { x, y } = getCoords(e);
+                if (currentTool === 'eraser') { eraseAt(x, y, pageNum, ctx); drawing = true; return; }
+                drawing = true; lastX = x; lastY = y;
+            };
+
+            const moveDraw = (e) => {
+                if (!drawing || currentTool === 'select') return;
+                if (e.cancelable) e.preventDefault();
+                const { x, y } = getCoords(e);
+                if (currentTool === 'eraser') { eraseAt(x, y, pageNum, ctx); return; }
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+
+                if (currentTool === 'draw') {
+                    ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize; ctx.globalAlpha = 1.0;
+                } else {
+                    ctx.strokeStyle = currentColor; ctx.lineWidth = currentBrushSize * 3.5; ctx.globalAlpha = 0.45;
+                }
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                ctx.globalAlpha = 1.0;
+
+                pageAnnotations[pageNum].push({
+                    type: currentTool, x1: lastX, y1: lastY, x2: x, y2: y,
+                    color: currentColor, size: ctx.lineWidth, alpha: currentTool === 'highlight' ? 0.45 : 1.0
+                });
+                lastX = x; lastY = y;
+            };
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', () => { drawing = false; });
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', moveDraw, { passive: false });
+            window.addEventListener('touchend', () => { drawing = false; });
+        }
+
+        function eraseAt(x, y, pageNum, ctx) {
+            if (!pageAnnotations[pageNum]) return;
+            pageAnnotations[pageNum] = pageAnnotations[pageNum].filter(item => Math.hypot(item.x1 - x, item.y1 - y) > 25);
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            redrawCanvas(ctx, pageAnnotations[pageNum]);
+        }
+
+        function redrawCanvas(ctx, annotations) {
+            annotations.forEach(item => {
+                ctx.beginPath(); ctx.moveTo(item.x1, item.y1); ctx.lineTo(item.x2, item.y2);
+                ctx.strokeStyle = item.color; ctx.lineWidth = item.size; ctx.globalAlpha = item.alpha || 1.0;
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            });
+        }
+
+        async function renderThumbnail(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 0.15 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width; canvas.height = viewport.height;
+            canvas.className = 'cursor-pointer rounded border border-slate-200 hover:border-blue-500 shadow-sm transition';
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            canvas.addEventListener('click', () => {
+                const target = document.querySelector(`[data-page-number="${pageNum}"]`);
+                if(target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+            thumbnailsContainer.appendChild(canvas);
+        }
+
+        async function loadOutline() {
+            outlineContainer.innerHTML = '';
+            try {
+                const outline = await pdfDoc.getOutline();
+                if (!outline || outline.length === 0) {
+                    outlineContainer.innerHTML = '<p class="text-xs text-slate-400 text-center mt-4">Sin índice disponible</p>';
+                    return;
+                }
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-1 pl-1';
+                async function renderItems(items, parent) {
+                    for (let item of items) {
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.textContent = item.title;
+                        a.className = 'text-blue-600 hover:underline cursor-pointer block truncate py-0.5';
+                        a.addEventListener('click', async (e) => {
+                            e.preventDefault();
+                            if (item.dest) {
+                                let dest = item.dest;
+                                if (typeof dest === 'string') dest = await pdfDoc.getDestination(dest);
+                                if (dest) {
+                                    const pageIndex = await pdfDoc.getPageIndex(dest[0]);
+                                    const target = document.querySelector(`[data-page-number="${pageIndex + 1}"]`);
+                                    if(target) target.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }
+                        });
+                        li.appendChild(a);
+                        if (item.items && item.items.length > 0) {
+                            const sub = document.createElement('ul');
+                            sub.className = 'pl-3 space-y-1 border-l border-slate-200 mt-1';
+                            await renderItems(item.items, sub);
+                            li.appendChild(sub);
+                        }
+                        parent.appendChild(li);
+                    }
+                }
+                await renderItems(outline, ul);
+                outlineContainer.appendChild(ul);
+            } catch (e) {
+                outlineContainer.innerHTML = '<p class="text-xs text-slate-400 text-center mt-4">Sin índice disponible</p>';
+            }
+        }
+
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('bg-blue-50', 'text-blue-600'));
+                btn.classList.add('bg-blue-50', 'text-blue-600');
+                currentTool = btn.dataset.tool;
+                editorView.className = `flex-1 flex flex-col overflow-hidden tool-${currentTool}`;
+            });
+        });
+
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-500'));
+                btn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-500');
+                currentColor = btn.dataset.color;
+            });
+        });
+
+        document.getElementById('brush-size').addEventListener('input', (e) => { currentBrushSize = e.target.value; });
+
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            if (!pdfDoc) { showToast("Primero abre un PDF."); return; }
+            showToast("Generando archivo PDF editado...");
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                if (i > 1) pdf.addPage();
+                const wrapper = document.querySelector(`[data-page-number="${i}"]`);
+                const canvases = wrapper.querySelectorAll('canvas');
+                const combined = document.createElement('canvas');
+                combined.width = canvases[0].width; combined.height = canvases[0].height;
+                const ctx = combined.getContext('2d');
+                ctx.drawImage(canvases[0], 0, 0);
+                if (canvases[1]) ctx.drawImage(canvases[1], 0, 0);
+                
+                const imgData = combined.toDataURL('image/jpeg', 0.95);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvases[0].height * pdfWidth) / canvases[0].width;
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            }
+            pdf.save("documento-editado.pdf");
+            showToast("¡PDF descargado con éxito!");
+        });
+    </script>
+</body>
+</html>
